@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0041cd">
+<title>Login Admin</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+  * { box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+  body { margin:0; padding:0; min-height:100vh; background:linear-gradient(135deg,#0041cd,#ff9913); display:flex; justify-content:center; align-items:center; }
+  .login { background:#fff; padding:25px; border-radius:15px; box-shadow:0 8px 20px rgba(0,0,0,0.2); width:100%; max-width:400px; text-align:center; }
+  h2 { color:#0041cd; margin-bottom:20px; }
+  input { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ccc; }
+  button { margin-top:10px; padding:10px 15px; border:none; border-radius:8px; background:#0041cd; color:#fff; font-weight:600; cursor:pointer; transition:0.3s; }
+  button:hover { background:#0031a0; }
+  .error { color:red; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<div class="login">
+  <h2>Login Admin</h2>
+  <input type="email" id="email" placeholder="Email Admin" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button id="loginBtn">Login</button>
+  <p class="error" id="errorMsg"></p>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCl13_a4x-BQnWNUjf9JOQX1DKc-HxLBys",
+    authDomain: "klien-39696.firebaseapp.com",
+    projectId: "klien-39696",
+    storageBucket: "klien-39696.firebasestorage.app",
+    messagingSenderId: "434516298894",
+    appId: "1:434516298894:web:fad97694415bd4237acddf"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  const loginBtn = document.getElementById('loginBtn');
+  const errorMsg = document.getElementById('errorMsg');
+
+  loginBtn.addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    try {
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const uid = userCredential.user.uid;
+
+      // cek di collection admins
+      const adminDoc = await db.collection('admins').doc(uid).get();
+
+      if(adminDoc.exists){
+        const adminData = adminDoc.data();
+        if(adminData.role === "admin" && adminData.status === "approved"){
+          window.location.href = "index.html";
+        } else {
+          errorMsg.textContent = "Akun admin belum approved / role tidak valid.";
+          await auth.signOut();
+        }
+      } else {
+        errorMsg.textContent = "Akun bukan admin.";
+        await auth.signOut();
+      }
+    } catch (err) {
+      errorMsg.textContent = "Login gagal: " + err.message;
+    }
+  });
+</script>
+
+</body>
+</html>
