@@ -471,7 +471,7 @@ function showCancelPopup(docId, divItem, data){
   btnOk.onclick = async function(){
     try{
       // Update status ke "Dibatalkan"
-      await db.collection('pesananFamiliHelper').doc(docId).update({status:"Dibatalkan"});
+      await db.collection('pesananFamiliHelper').doc(docId).update({status:"dibatalkan"});
       popup.style.display='none';
 
       // Hapus dari Pesanan Diproses
