@@ -303,6 +303,15 @@ body {
     <button onclick="document.getElementById('popupConfirm').style.display='none'" style="margin-left:10px;">Batal</button>
   </div>
 </div>
+<!-- POPUP KONFIRMASI BATALKAN -->
+<div class="popup" id="popupCancel" onclick="closeCancelPopup(event)">
+  <div class="popup-content" onclick="event.stopPropagation()">
+    <h3>Konfirmasi</h3>
+    <p>Apakah Anda yakin ingin membatalkan pesanan ini?</p>
+    <button id="btnCancelOk">Oke</button>
+    <button onclick="document.getElementById('popupCancel').style.display='none'" style="margin-left:10px;">Batal</button>
+  </div>
+</div>
 <!-- POPUP KONFIRMASI HAPUS RIWAYAT -->
 <div class="popup" id="popupHapusRiwayat" onclick="closeHapusPopup(event)">
   <div class="popup-content" onclick="event.stopPropagation()">
@@ -384,43 +393,119 @@ async function loadPesanan(){
       return;
     }
 
-    snap.forEach(doc=>{
-      const data = doc.data();
-      const div = document.createElement('div');
-      div.className = "item";
-
-      // LEFT SIDE
-      const left = document.createElement('div');
-      left.className = "item-left";
-      left.innerHTML = `
+  snap.forEach(doc => {
+    const data = doc.data();
+    const div = document.createElement('div');
+    div.className = "item";
+  
+    // LEFT SIDE
+    const left = document.createElement('div');
+    left.className = "item-left";
+    left.innerHTML = `
+      <div class="nama">${data.nama || '-'}</div>
+      <div class="jenisLayanan">Layanan: ${data.jenisLayanan || '-'}</div>
+      ${data.keterangan ? `<div class="keterangan">${data.keterangan}</div>` : ''}
+      <div class="createdAt">${data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleString() : ''}</div>
+    `;
+    div.appendChild(left);
+  
+    if (data.status === "diproses") {
+      // Klik item untuk popup detail
+      left.onclick = () => showPopup(data);
+  
+      // CONTAINER UNTUK TOMBOL
+      const btnContainer = document.createElement('div');
+      btnContainer.style.marginTop = "8px";
+      btnContainer.style.display = "flex";
+      btnContainer.style.gap = "10px";
+  
+      // Tombol Done
+      const btnDone = document.createElement('button');
+      btnDone.className = "buttonDone";
+      btnDone.innerText = "Done";
+      btnDone.onclick = () => markDone(doc.id, div, data);
+      btnContainer.appendChild(btnDone);
+  
+      // Tombol Batalkan
+      const btnCancel = document.createElement('button');
+      btnCancel.className = "buttonDone";
+      btnCancel.style.background = "#f87171"; // merah soft
+      btnCancel.innerText = "Batalkan";
+      btnCancel.onclick = () => showCancelPopup(doc.id, div, data);
+      btnContainer.appendChild(btnCancel);
+  
+      div.appendChild(btnContainer);
+  
+      pesananList.appendChild(div);
+    } else {
+      // Jika status sudah Done / Dibatalkan, tampilkan di riwayat
+      const riwayatDiv = document.createElement('div');
+      riwayatDiv.className = "item";
+  
+      const leftRiwayat = document.createElement('div');
+      leftRiwayat.className = "item-left";
+      leftRiwayat.innerHTML = `
         <div class="nama">${data.nama || '-'}</div>
         <div class="jenisLayanan">Layanan: ${data.jenisLayanan || '-'}</div>
-        ${data.keterangan ? `<div class="keterangan">${data.keterangan}</div>` : ''}
+        <div class="status">Status: ${data.status || '-'}</div>
         <div class="createdAt">${data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleString() : ''}</div>
       `;
-      div.appendChild(left);
-
-       if(data.status==="diproses"){
-        // Klik item untuk popup
-        left.onclick = ()=>showPopup(data);
-      
-        // Tombol Done
-        const btn = document.createElement('button');
-        btn.className = "buttonDone";
-        btn.innerText = "Done";
-        btn.onclick = ()=>markDone(doc.id, div, data);// panggil fungsi markDone dengan docId dan element div
-        div.appendChild(btn);
-      
-        pesananList.appendChild(div);
-      } else {
-        riwayatList.appendChild(div);
-      }
-    });
+      riwayatDiv.appendChild(leftRiwayat);
+  
+      riwayatList.appendChild(riwayatDiv);
+    }
+  });
 
   }catch(err){
     console.error("Gagal load pesanan:", err);
     document.getElementById('pesananList').innerHTML="<p>Terjadi kesalahan saat mengambil data.</p>";
     document.getElementById('riwayatList').innerHTML="<p>Terjadi kesalahan saat mengambil data.</p>";
+  }
+}
+// Tampilkan popup Batalkan
+function showCancelPopup(docId, divItem, data){
+  const popup = document.getElementById('popupCancel');
+  popup.style.display = 'flex';
+
+  const btnOk = document.getElementById('btnCancelOk');
+  btnOk.onclick = async function(){
+    try{
+      // Update status ke "Dibatalkan"
+      await db.collection('pesananFamiliHelper').doc(docId).update({status:"Dibatalkan"});
+      popup.style.display='none';
+
+      // Hapus dari Pesanan Diproses
+      divItem.remove();
+
+      // Tambahkan ke Riwayat Pesanan
+      const riwayatList = document.getElementById('riwayatList');
+      const div = document.createElement('div');
+      div.className = "item";
+
+      const left = document.createElement('div');
+      left.className = "item-left";
+      left.innerHTML = `
+        <div class="nama">${data.nama || '-'}</div>
+        <div class="jenisLayanan">Layanan: ${data.jenisLayanan || '-'}</div>
+        <div class="createdAt">${data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleString() : ''}</div>
+        <div class="keterangan" style="color:#f87171;">Status: Dibatalkan</div>
+      `;
+      div.appendChild(left);
+
+      riwayatList.prepend(div);
+
+      alert("Pesanan berhasil dibatalkan!");
+    } catch(err){
+      console.error(err);
+      alert("Gagal membatalkan pesanan!");
+    }
+  }
+}
+
+// Tutup popup cancel jika klik overlay
+function closeCancelPopup(event){
+  if(event.target.id==='popupCancel'){
+    document.getElementById('popupCancel').style.display='none';
   }
 }
 // ==== HAPUS RIWAYAT ====
