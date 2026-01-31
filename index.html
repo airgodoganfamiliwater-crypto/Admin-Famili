@@ -55,6 +55,37 @@ body {
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
   position: relative;
+  display: flex;
+  justify-content: flex-end; /* tombol di kanan */
+  align-items: center;
+  padding: 0 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+#btnLogout {
+  position: absolute;
+  top: 16px;      /* jarak dari atas header */
+  right: 20px;    /* jarak dari kanan */
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#btnLogout svg {
+  stroke: #fff;
+}
+
+#btnLogout:hover {
+  background: #fb7a2a; /* oranye hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(251,146,60,0.4);
 }
 /* Fade-in container */
 .container {
@@ -473,7 +504,14 @@ body {
 </head>
 <body>
 
-<div class="header"></div>
+<div class="header">
+  <button id="btnLogout" title="Logout">
+    <!-- Contoh ikon logout -->
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1"/>
+    </svg>
+  </button>
+</div>
 <div class="container">
 
   <!-- Welcome Card -->
@@ -990,6 +1028,19 @@ function showPopup({title="Info", message="", type="alert", onConfirm=null}){
       navLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
     });
+  });
+  
+  //logout
+  const btnLogout = document.getElementById('btnLogout');
+  
+  btnLogout.addEventListener('click', async () => {
+    try {
+      await auth.signOut();
+      window.location.href = "loginadmin.html";
+    } catch(err) {
+      console.error(err);
+      alert("Gagal logout, coba lagi!");
+    }
   });
   
   // Transisi halaman
