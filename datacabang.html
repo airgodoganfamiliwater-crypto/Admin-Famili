@@ -24,7 +24,11 @@
     --muted:#f3f3f3;        /* Teks sekunder */
     --glow:0 0 20px rgba(20,184,166,.2);
   }
-
+.grid2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
 body {
   margin: 0;
   font-family: 'Nunito', sans-serif;
@@ -91,6 +95,15 @@ body {
     font-size: 30px;
     text-align: center;
   }
+  .card2 {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    margin-top: 15px;
+    margin-bottom: 15px;
+    position: relative;
+  }
   .card {
     background: var(--card);
     border-radius: 20px;
@@ -128,29 +141,65 @@ body {
   .btnCancel{background:#e5e5e5;color:black}
   .btnDelete{background:var(--accent);color:white}
   
-  /* POPUP */
-/* POPUP */
+ /* ================= POPUP FRIENDLY ================= */
 .popup-bg{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.35);
+  backdrop-filter: blur(4px);
   display:none;
   align-items:center;
   justify-content:center;
   z-index:99999999;
-  overflow-y:auto; /* memungkinkan scroll jika tinggi popup > layar */
-  padding:20px;    /* agar popup tidak menempel layar */
+  padding:16px;
+
+  /* animasi */
+  opacity:0;
+  transition:opacity .25s ease;
 }
 
+.popup-bg.show{
+  display:flex;
+  opacity:1;
+}
+
+/* BOX POPUP LEBIH COMPACT */
 .popupBox{
   background:var(--card);
-  padding:14px;
-  border-radius:12px;
-  width:90%;
-  max-width:420px;
-  max-height:90vh;   /* maksimal tinggi 90% viewport */
-  overflow-y:auto;   /* scroll jika isi melebihi max-height */
-  box-shadow:var(--glow);
+  padding:16px;
+  border-radius:16px;
+  width:100%;
+  max-width:360px; /* sebelumnya 420 → diperkecil */
+  max-height:80vh; /* tidak terlalu tinggi */
+  overflow-y:auto;
+  box-shadow:0 15px 40px rgba(0,0,0,0.2);
+  
+  /* animasi muncul */
+  transform:translateY(20px) scale(0.95);
+  transition:all .25s ease;
+}
+
+/* animasi saat muncul */
+.popup-bg.show .popupBox{
+  transform:translateY(0) scale(1);
+}
+
+/* input lebih ramah */
+.popupBox input{
+  width:100%;
+  padding:10px;
+  margin:6px 0 10px 0;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#fafafa;
+  font-size:14px;
+}
+
+/* label kecil biar rapi */
+.popupBox small{
+  font-weight:600;
+  color:#374151;
+  font-size:12px;
 }
   input{
     width:100%;
@@ -232,18 +281,50 @@ body {
   <div class="card1">
     <h1>Laporan Harian Admin</h1>
     <div style="margin-bottom:10px;">
-    <div class="row" style="gap:10px; flex-wrap:wrap;">
-      <div style="flex:1; min-width:120px;" >
-        <input type="date" id="filterStart">
-      </div>
-      <div style="flex:1; min-width:120px;">
-        <input type="date" id="filterEnd">
-      </div>
-      <div style="flex:1; min-width:120px; align-self:end;">
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:120px;" >
+          <input type="date" id="filterStart">
+        </div>
+        <div style="flex:1; min-width:120px;">
+          <input type="date" id="filterEnd">
+        </div>
+        <div style="flex:1; min-width:120px; align-self:end;">
         <button onclick="applyFilter()" style="width:100%;">Filter</button>
+        </div>
       </div>
     </div>
-  </div>
+    <!-- ===== SUMMARY CARD ===== -->
+    <div class="grid2" id="summaryBox">
+      <div class="card2">
+        <div class="small">Total Loyang</div>
+        <div class="bold" id="sumLoyang">0</div>
+      </div>
+    
+      <div class="card2">
+        <div class="small">Total Galon</div>
+        <div class="bold" id="sumGalon">0</div>
+      </div>
+    
+      <div class="card2">
+        <div class="small">Total Klien + Sales</div>
+        <div class="bold" id="sumCustomer">0</div>
+      </div>
+    
+      <div class="card2">
+        <div class="small">Total Pembayaran (Klien+Sales)</div>
+        <div class="bold" id="sumPembayaran">Rp 0</div>
+      </div>
+    
+      <div class="card2">
+        <div class="small">Total Pengeluaran</div>
+        <div class="bold" id="sumPengeluaran">Rp 0</div>
+      </div>
+    
+      <div class="card2">
+        <div class="small">Total Profit / Uang Masuk</div>
+        <div class="bold" id="sumProfit">Rp 0</div>
+      </div>
+    </div>
   </div>
   <div id="list"></div>
 </div>
@@ -262,10 +343,14 @@ body {
     <small>Pembayaran dari Klien</small><input id="ePayKlien">
     <small>Jumlah Sales</small><input id="eSales">
     <small>Pembayaran ke Sales</small><input id="ePaySales">
-
+    <hr>
+    <small>Pengeluaran 1</small><input id="ePengeluaran1">
+    <small>Pengeluaran 2</small><input id="ePengeluaran2">
+    <small>Pengeluaran 3</small><input id="ePengeluaran3">
     <hr>
 
-    <small>Total Profit / Uang Masuk</small><input id="eTotalProfit">
+    <small>Total Profit / Uang Masuk</small>
+    <input id="eTotalProfit" readonly style="background:#f9fafb;font-weight:bold;">
 
     <div class="row">
       <button class="btnSave" onclick="saveEdit()">Simpan</button>
@@ -347,6 +432,40 @@ function formatTanggal(str){
   if(!str) return "-";
   return new Date(str).toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 }
+function renderSummary(dataArray){
+  let totalLoyang = 0;
+  let totalGalon = 0;
+  let totalCustomer = 0;
+  let totalPembayaran = 0;
+  let totalPengeluaran = 0;
+  let totalProfit = 0;
+
+  dataArray.forEach(d=>{
+    totalLoyang += Number(d.loyang || 0);
+    totalGalon += Number(d.galon || 0);
+
+    // Klien + Sales digabung
+    totalCustomer += Number(d.klien || 0) + Number(d.sales || 0);
+
+    // Pembayaran klien + sales digabung
+    totalPembayaran += Number(d.pembayaranKlien || 0) + Number(d.pembayaranSales || 0);
+
+    // Ambil total pengeluaran dari object pengeluaran
+    const p = d.pengeluaran || {};
+    totalPengeluaran += Number(p.totalPengeluaran || 0);
+
+    // Total profit / uang masuk
+    totalProfit += Number(d.totalProfit || 0);
+  });
+
+  // Render ke UI
+  document.getElementById("sumLoyang").textContent = totalLoyang;
+  document.getElementById("sumGalon").textContent = totalGalon;
+  document.getElementById("sumCustomer").textContent = totalCustomer;
+  document.getElementById("sumPembayaran").textContent = rupiah(totalPembayaran);
+  document.getElementById("sumPengeluaran").textContent = rupiah(totalPengeluaran);
+  document.getElementById("sumProfit").textContent = rupiah(totalProfit);
+}
 
 // ================= AUTH ADMIN PUSAT =================
 auth.onAuthStateChanged(async u=>{
@@ -358,61 +477,32 @@ auth.onAuthStateChanged(async u=>{
 
 // ================= LOAD DATA =================
 let allData = [];
+
 async function loadAllData(){
-  const snap = await db.collection("inputAdmin").orderBy("tanggal","desc").get();
-  list.innerHTML="";
-  allData=[];
-  snap.forEach(d=>{
-    const data = {...d.data(), docId: d.id};
-    allData.push(data);
+  try{
+    const snap = await db.collection("inputAdmin")
+      .orderBy("tanggal","desc")
+      .limit(50) // penting biar hemat quota Firebase
+      .get();
 
-    const div=document.createElement("div");
-    div.className="card";
-    div.onclick=()=>openEdit(data.docId,data);
-
-    div.innerHTML=`
-      <div class="bold">📅 ${formatTanggal(data.tanggal)}</div>
-      <div class="small">Cabang: ${data.adminNama} (${data.adminID})</div>
-      <hr>
-      <div>Loyang: <b>${data.loyang}</b></div>
-      <div>Galon: <b>${data.galon}</b></div>
-      <div>Fee: <b>${data.fee}</b></div>
-      <div>Saldo: <b>${data.saldo}</b></div>
-      <div>Jumlah Klien: <b>${data.klien}</b></div>
-      <div>Pembayaran Klien: <b>${rupiah(data.pembayaranKlien)}</b></div>
-      <div>Jumlah Sales: <b>${data.sales}</b></div>
-      <div>Pembayaran Sales: <b>${rupiah(data.pembayaranSales)}</b></div>
-      <hr>
-      <div class="bold">Total Profit: ${rupiah(data.totalProfit)}</div>
-    `;
-    list.appendChild(div);
-  });
-}
-function applyFilter(){
-  const start = document.getElementById("filterStart").value;
-  const end = document.getElementById("filterEnd").value;
-
-  if(!start && !end){
-    loadAllData(); // tanpa filter
-    return;
-  }
-
-  let query = db.collection("inputAdmin").orderBy("tanggal","desc");
-
-  if(start && end){
-    query = query.where("tanggal", ">=", start).where("tanggal", "<=", end);
-  } else if(start){
-    query = query.where("tanggal", ">=", start);
-  } else if(end){
-    query = query.where("tanggal", "<=", end);
-  }
-
-  query.get().then(snap=>{
     list.innerHTML="";
     allData=[];
+
+    // Jika tidak ada data
+    if(snap.empty){
+      list.innerHTML = `<div class="card"><div class="small">Belum ada data</div></div>`;
+      renderSummary([]); // ← WAJIB supaya summary reset
+      return;
+    }
+
     snap.forEach(d=>{
       const data = {...d.data(), docId: d.id};
       allData.push(data);
+
+      const p = data.pengeluaran || {};
+      const lainnya = (p.lainnya || [])
+        .map(x=>`${x.keterangan || "-"}: ${rupiah(x.harga)}`)
+        .join("<br>");
 
       const div=document.createElement("div");
       div.className="card";
@@ -420,42 +510,212 @@ function applyFilter(){
 
       div.innerHTML=`
         <div class="bold">📅 ${formatTanggal(data.tanggal)}</div>
-        <div class="small">Cabang: ${data.adminNama} (${data.adminID})</div>
+        <div class="small">Cabang: ${data.adminNama || "-"} (${data.adminID || "-"})</div>
         <hr>
-        <div>Loyang: <b>${data.loyang}</b></div>
-        <div>Galon: <b>${data.galon}</b></div>
-        <div>Fee: <b>${data.fee}</b></div>
-        <div>Saldo: <b>${data.saldo}</b></div>
-        <div>Jumlah Klien: <b>${data.klien}</b></div>
+
+        <div>Loyang Produksi: <b>${data.loyang || 0}</b></div>
+        <div>Galon Air: <b>${data.galon || 0}</b></div>
+        <div>Fee Admin Cabang: <b>${rupiah(data.fee)}</b></div>
+        <div>Saldo Akhir Cabang: <b>${rupiah(data.saldo)}</b></div>
+
+        <hr>
+        <div>Jumlah Klien: <b>${data.klien || 0}</b></div>
         <div>Pembayaran Klien: <b>${rupiah(data.pembayaranKlien)}</b></div>
-        <div>Jumlah Sales: <b>${data.sales}</b></div>
+        <div>Jumlah Sales: <b>${data.sales || 0}</b></div>
         <div>Pembayaran Sales: <b>${rupiah(data.pembayaranSales)}</b></div>
+
         <hr>
-        <div class="bold">Total Profit: ${rupiah(data.totalProfit)}</div>
+        <div class="bold">📦 Rincian Pengeluaran:</div>
+        <div class="small">Gas: ${rupiah(p.gas)}</div>
+        <div class="small">Tutup: ${rupiah(p.tutup)}</div>
+        <div class="small">Bensin: ${rupiah(p.bensin)}</div>
+        <div class="small">Listrik: ${rupiah(p.listrik)}</div>
+        ${
+          lainnya 
+          ? `<div class="small"><b>Lainnya:</b><br>${lainnya}</div>` 
+          : ""
+        }
+        <div class="small bold">Total Pengeluaran: ${rupiah(p.totalPengeluaran)}</div>
+
+        <hr>
+        <div class="bold" style="font-size:16px;">
+          💰 Total Profit / Uang Masuk: ${rupiah(data.totalProfit)}
+        </div>
       `;
+
       list.appendChild(div);
     });
+
+    // ===== RENDER SUMMARY (PENTING) =====
+    renderSummary(allData);
+
+  }catch(error){
+    console.error("Load Data Error:", error);
+    list.innerHTML = `<div class="card"><div class="small">Gagal memuat data</div></div>`;
+    renderSummary([]);
+  }
+}
+function applyFilter(){
+  const start = document.getElementById("filterStart").value;
+  const end = document.getElementById("filterEnd").value;
+
+  // Jika tidak pakai filter → load normal
+  if(!start && !end){
+    loadAllData();
+    return;
+  }
+
+  let query = db.collection("inputAdmin")
+    .orderBy("tanggal","desc");
+
+  // Range filter tanggal
+  if(start && end){
+    query = query
+      .where("tanggal", ">=", start)
+      .where("tanggal", "<=", end);
+  } 
+  else if(start){
+    query = query.where("tanggal", ">=", start);
+  } 
+  else if(end){
+    query = query.where("tanggal", "<=", end);
+  }
+
+  query.get()
+  .then(snap=>{
+    list.innerHTML="";
+    allData=[];
+
+    // Jika hasil filter kosong
+    if(snap.empty){
+      list.innerHTML = `<div class="card"><div class="small">Data tidak ditemukan pada rentang tanggal ini</div></div>`;
+      renderSummary([]); // ← WAJIB reset summary
+      return;
+    }
+
+    snap.forEach(d=>{
+      const data = {...d.data(), docId: d.id};
+      allData.push(data);
+
+      const p = data.pengeluaran || {};
+      const lainnya = (p.lainnya || [])
+        .map(x=>`${x.keterangan || "-"}: ${rupiah(x.harga)}`)
+        .join("<br>");
+      
+      const div=document.createElement("div");
+      div.className="card";
+      div.onclick=()=>openEdit(data.docId,data);
+
+      div.innerHTML=`
+        <div class="bold">📅 ${formatTanggal(data.tanggal)}</div>
+        <div class="small">Cabang: ${data.adminNama || "-"} (${data.adminID || "-"})</div>
+        <hr>
+      
+        <div>Loyang Produksi: <b>${data.loyang || 0}</b></div>
+        <div>Galon Air: <b>${data.galon || 0}</b></div>
+        <div>Fee Admin Cabang: <b>${rupiah(data.fee)}</b></div>
+        <div>Saldo Akhir Cabang: <b>${rupiah(data.saldo)}</b></div>
+      
+        <hr>
+        <div>Jumlah Klien: <b>${data.klien || 0}</b></div>
+        <div>Pembayaran Klien: <b>${rupiah(data.pembayaranKlien)}</b></div>
+        <div>Jumlah Sales: <b>${data.sales || 0}</b></div>
+        <div>Pembayaran Sales: <b>${rupiah(data.pembayaranSales)}</b></div>
+      
+        <hr>
+        <div class="bold">📦 Rincian Pengeluaran:</div>
+        <div class="small">Gas: ${rupiah(p.gas)}</div>
+        <div class="small">Tutup: ${rupiah(p.tutup)}</div>
+        <div class="small">Bensin: ${rupiah(p.bensin)}</div>
+        <div class="small">Listrik: ${rupiah(p.listrik)}</div>
+        ${
+          lainnya 
+          ? `<div class="small"><b>Lainnya:</b><br>${lainnya}</div>` 
+          : ""
+        }
+        <div class="small bold">Total Pengeluaran: ${rupiah(p.totalPengeluaran)}</div>
+      
+        <hr>
+        <div class="bold" style="font-size:16px;">
+          💰 Total Profit / Uang Masuk: ${rupiah(data.totalProfit)}
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+
+    // ===== RENDER SUMMARY SESUAI FILTER =====
+    renderSummary(allData);
+  })
+  .catch(error=>{
+    console.error("Filter Error:", error);
+    list.innerHTML = `<div class="card"><div class="small">Gagal memfilter data</div></div>`;
+    renderSummary([]);
   });
 }
 
 // ================= EDIT POPUP =================
 let currentDocId=null;
 function openEdit(id,data){
-  currentDocId=id;
-  eTanggal.value=data.tanggal||"";
-  eLoyang.value=data.loyang||0;
-  eGalon.value=data.galon||0;
-  eFee.value=data.fee||0;
-  eSaldo.value=data.saldo||0;
-  eKlien.value=data.klien||0;
-  ePayKlien.value=data.pembayaranKlien||0;
-  eSales.value=data.sales||0;
-  ePaySales.value=data.pembayaranSales||0;
-  eTotalProfit.value=data.totalProfit||0;
-  editPopup.style.display="flex";
-}
-function closeEdit(){ editPopup.style.display="none"; }
+  currentDocId = id;
 
+  // isi data ke input (punya kamu tetap)
+  document.getElementById("eTanggal").value = data.tanggal || "";
+  document.getElementById("eLoyang").value = data.loyang || 0;
+  document.getElementById("eGalon").value = data.galon || 0;
+  document.getElementById("eFee").value = data.fee || 0;
+  document.getElementById("eSaldo").value = data.saldo || 0;
+  document.getElementById("eKlien").value = data.klien || 0;
+  document.getElementById("ePayKlien").value = data.pembayaranKlien || 0;
+  document.getElementById("eSales").value = data.sales || 0;
+  document.getElementById("ePaySales").value = data.pembayaranSales || 0;
+  document.getElementById("eTotalProfit").value = rupiah(data.totalProfit || 0);
+
+  // tampilkan popup dengan animasi
+  editPopup.classList.add("show");
+}
+
+function closeEdit(){
+  editPopup.classList.remove("show");
+}
+
+function openDelete(){
+  deletePopup.classList.add("show");
+}
+
+function closeDelete(){
+  deletePopup.classList.remove("show");
+}
+
+function num(x){ return Number(x)||0; }
+
+function calcTotalProfit(){
+  const total =
+    num(ePayKlien.value)
+    - num(ePaySales.value)
+    - num(eFee.value)
+    - num(ePengeluaran1.value)
+    - num(ePengeluaran2.value)
+    - num(ePengeluaran3.value);
+
+  eTotalProfit.value = total;
+}
+// ================= CLICK OUTSIDE TO CLOSE POPUP =================
+const editPopup = document.getElementById("editPopup");
+const deletePopup = document.getElementById("deletePopup");
+
+// Klik area gelap = tutup popup
+editPopup.addEventListener("click", function(e){
+  if(e.target === editPopup){
+    closeEdit();
+  }
+});
+
+deletePopup.addEventListener("click", function(e){
+  if(e.target === deletePopup){
+    closeDelete();
+  }
+});
 // ================= SAVE UPDATE =================
 async function saveEdit(){
   if(!currentDocId) return;
@@ -469,6 +729,9 @@ async function saveEdit(){
     pembayaranKlien:Number(ePayKlien.value),
     sales:Number(eSales.value),
     pembayaranSales:Number(ePaySales.value),
+    pengeluaran1:Number(ePengeluaran1.value),
+    pengeluaran2:Number(ePengeluaran2.value),
+    pengeluaran3:Number(ePengeluaran3.value),
     totalProfit:Number(eTotalProfit.value)
   };
   try{
